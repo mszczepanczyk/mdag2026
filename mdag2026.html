@@ -1,336 +1,567 @@
 <!DOCTYPE html>
 <html lang="pl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MDAG 2026 — Filmy (23. edycja)</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #0f0f0f; color: #e8e8e8; min-height: 100vh; }
-  header { background: #1a1a1a; border-bottom: 1px solid #2a2a2a;
-    padding: 1.5rem 2rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-  header h1 { font-size: 1.4rem; font-weight: 700; color: #fff; }
-  header .sub { font-size: .85rem; color: #888; }
-  .controls { background: #141414; border-bottom: 1px solid #222;
-    padding: 1rem 2rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-  .controls input { background: #1e1e1e; border: 1px solid #333; border-radius: 6px;
-    color: #e8e8e8; padding: 8px 12px; font-size: 14px; width: 240px; }
-  .controls input:focus { outline: none; border-color: #555; }
-  .controls select { background: #1e1e1e; border: 1px solid #333; border-radius: 6px;
-    color: #e8e8e8; padding: 8px 10px; font-size: 13px; cursor: pointer; }
-  .stats { display: flex; gap: 16px; margin-left: auto; flex-wrap: wrap; }
-  .stat { background: #1e1e1e; border: 1px solid #2a2a2a; border-radius: 8px;
-    padding: 6px 14px; text-align: center; }
-  .stat-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: .05em; }
-  .stat-val { font-size: 20px; font-weight: 700; color: #fff; }
-  .table-wrap { overflow-x: auto; padding: 0 2rem 3rem; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 1rem; }
-  thead th { text-align: left; padding: 10px 10px; font-size: 11px; font-weight: 600;
-    color: #666; text-transform: uppercase; letter-spacing: .06em;
-    border-bottom: 1px solid #2a2a2a; cursor: pointer; white-space: nowrap;
-    position: sticky; top: 0; background: #0f0f0f; }
-  thead th:hover { color: #ccc; }
-  tbody tr { border-bottom: 1px solid #1a1a1a; transition: background .1s; }
-  tbody tr:hover { background: #1a1a1a; }
-  td { padding: 8px 10px; vertical-align: middle; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
-  td.ctr { font-size: 11px; color: #666; max-width: 140px; }
-  td.num { text-align: right; color: #888; }
-  td.links { white-space: nowrap; overflow: visible; max-width: none; }
-  .rating { font-weight: 700; }
-  .s-hi { color: #4ade80; }
-  .s-mid { color: #60a5fa; }
-  .s-lo { color: #f97316; }
-  .dash { color: #444; }
-  .badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px;
-    font-weight: 600; padding: 2px 8px; border-radius: 20px; }
-  .b-win { background: rgba(74,222,128,.15); color: #4ade80; }
-  .b-nom { background: rgba(96,165,250,.15); color: #60a5fa; }
-  th.asc::after { content: " ↑"; color: #aaa; }
-  th.desc::after { content: " ↓"; color: #aaa; }
-  a.lnk { display: inline-flex; align-items: center; gap: 3px; font-size: 11px;
-    font-weight: 600; padding: 3px 8px; border-radius: 5px; text-decoration: none;
-    border: 1px solid; transition: background .15s; }
-  a.lnk-m { color: #f87171; border-color: #f87171; background: rgba(248,113,113,.08); }
-  a.lnk-m:hover { background: rgba(248,113,113,.18); }
-  a.lnk-f { color: #60a5fa; border-color: #60a5fa; background: rgba(96,165,250,.08); }
-  a.lnk-f:hover { background: rgba(96,165,250,.18); }
-  a.lnk-none { color: #444; border-color: #333; background: transparent;
-    cursor: default; pointer-events: none; }
-  .empty { text-align: center; padding: 3rem; color: #555; }
-  footer { text-align: center; padding: 2rem; font-size: 11px; color: #444; }
-</style>
-</head>
-<body>
-<header>
-  <div>
-    <h1>🎬 MDAG 2026 — Filmy</h1>
-    <div class="sub">23. Millennium Docs Against Gravity · Oceny: Filmweb · Dane: maj 2026</div>
-  </div>
-  <div class="stats">
-    <div class="stat"><div class="stat-label">Filmy</div><div class="stat-val" id="s-total">—</div></div>
-    <div class="stat"><div class="stat-label">Z oceną</div><div class="stat-val" id="s-rated">—</div></div>
-    <div class="stat"><div class="stat-label">Nagrodzone</div><div class="stat-val" id="s-wins">—</div></div>
-    <div class="stat"><div class="stat-label">Śr. ocena</div><div class="stat-val" id="s-avg">—</div></div>
-  </div>
-</header>
-<div class="controls">
-  <input type="text" id="search" placeholder="🔍  Szukaj tytułu lub kraju…">
-  <select id="filter">
-    <option value="all">Wszystkie filmy</option>
-    <option value="wins">Nagrodzone</option>
-    <option value="noms">Nominowane lub nagrodzone</option>
-    <option value="rated">Z oceną Filmweb</option>
-    <option value="nofw">Brak linku Filmweb</option>
-  </select>
-  <select id="sort-sel" onchange="sort(this.value)">
-    <option value="pl">Tytuł A–Z</option>
-    <option value="rating">Ocena (malejąco)</option>
-    <option value="votes">Głosy (malejąco)</option>
-    <option value="dur">Czas trwania</option>
-    <option value="wins">Nagrody</option>
-  </select>
-</div>
-<div class="table-wrap">
-<table>
-  <thead>
-    <tr>
-      <th style="width:22%" onclick="sort('pl')" id="h-pl">Tytuł polski</th>
-      <th style="width:16%" onclick="sort('en')" id="h-en">Tytuł angielski</th>
-      <th style="width:13%" onclick="sort('ctr')" id="h-ctr">Kraj</th>
-      <th style="width:5%;text-align:right" onclick="sort('dur')" id="h-dur">min</th>
-      <th style="width:6%;text-align:center" onclick="sort('rating')" id="h-rating">Ocena</th>
-      <th style="width:6%;text-align:right" onclick="sort('votes')" id="h-votes">Głosy</th>
-      <th style="width:8%;text-align:center" onclick="sort('wins')" id="h-wins">Nagrody</th>
-      <th style="width:8%;text-align:center" onclick="sort('noms')" id="h-noms">Nom.</th>
-      <th style="width:16%">Linki</th>
-    </tr>
-  </thead>
-  <tbody id="tbody"></tbody>
-</table>
-<div id="empty" class="empty" style="display:none">Brak wyników dla podanego zapytania.</div>
-</div>
-<footer>Dane zebrane z mdag.pl i filmweb.pl · Maj 2026 · * = film z edycji MDAG 2025</footer>
-<script>
-const BM='https://mdag.pl/pl/ogladaj-online/23/film/';
-const BF='https://www.filmweb.pl/film/';
-// [pl, en, dur, wins, noms, country, rating, votes, mdag_slug, fw_slug]
-const RAW=[
-["10k","10k",32,0,1,"Francja/Hiszpania",5.8,16,"10k","%2B10k-2025-10082313"],
-["Aborcyjna imprezka","Abortion Party",13,0,0,"—",null,null,"aborcyjna-imprezka","Aborcyjna+imprezka-2025-10122788"],
-["Air Horse One","Air Horse One",21,0,1,"Belgia/Szwajcaria",5.9,28,"blok-3-o-ludziach-i-zwierzetach-1","Air+Horse+One-2025-10118979"],
-["Amazomania","Amazomania",null,0,0,"—",null,null,null,"Amazomania-2026-10119981"],
-["André jest idiotą","André est un idiot",null,0,0,"—",null,null,null,"Andr%C3%A9+jest+idiot%C4%85-2025-10071769"],
-["Apokalipsa wczoraj, dzisiaj, jutro i pojutrze","Apocalypse Yesterday…",21,0,1,"Czechy/Ukraina",4.9,12,"blok-6-czego-pozadamy-o-czym-marzymy-1","Apokalipsa+wczoraj%2C+dzisiaj%2C+jutro+i+pojutrze-2025-10097169"],
-["Arek.Mama.Panorama","Arek.Mama.Panorama",null,0,0,"—",null,null,null,"Arek.Mama.Panorama-2026-10119673"],
-["Atomowa kolonia","Boomerang Atomic",22,0,0,"—",null,null,"blok-5-w-pulapce-historii-1","Atomowa+kolonia-2025-10093427"],
-["Barbara Forever","Barbara Forever",102,0,1,"USA",6.6,33,"barbara-forever","Barbara+Forever-2026-10108003"],
-["Benita","Benita",81,0,0,"USA",null,null,"benita","Benita-2025-10118879"],
-["Bez końca","Without End",null,0,0,"—",null,null,null,"Bez+ko%C5%84ca-2026-10081351"],
-["Białe kłamstwa","White Lies",98,0,0,"—",null,null,"biale-klamstwa","Bia%C5%82e+k%C5%82amstwa-2025-10122295"],
-["Bibliotekarki","The Librarians",null,0,0,"—",null,null,null,"Bibliotekarki-2025-10074521"],
-["Broken English","Broken English",96,0,2,"Wielka Brytania",6.3,133,"broken-english","%C5%81amana+angielszczyzna-2025-10092246"],
-["Bugboy","Bugboy",null,0,0,"—",null,null,null,"Bugboy-2026-10119394"],
-["Bujając w obłokach","Heads in the Clouds",12,0,1,"Polska",5.4,22,"bujajac-w-oblokach","Bujaj%C4%85c+w+ob%C5%82okach-2026-10118975"],
-["Był sobie śnieg","Melt",128,0,1,"Austria",6.3,47,"byl-sobie-snieg","By%C5%82+sobie+%C5%9Bnieg-2025-10103144"],
-["Ciało wojny","Body of War",null,0,0,"—",null,null,null,"Cia%C5%82o+wojny-2026-10119674"],
-["Christiania","Christiania",95,0,0,"—",null,null,"christiania","Christiania-2026-10122259"],
-["Cisza przed burzą","Storm Alerts",82,0,0,"—",null,null,"cisza-przed-burza","Cisza+przed+burz%C4%85-2025-10071997"],
-["Co ukrywa Elon Musk?","Elon Musk Unveiled",90,0,0,"—",null,null,"co-ukrywa-elon-musk","Co+ukrywa+Elon+Musk-2025-10114914"],
-["Coexistence, My Ass! *","Coexistence, My Ass!",95,0,0,"USA/Francja",7.3,573,null,"Coexistence%2C+My+Ass-2025-10068918"],
-["Córki góry","Daughters of the Mountain",null,0,0,"—",null,null,null,"C%C3%B3rki+g%C3%B3ry-2026-10111401"],
-["Córki lasu","Daughters of the Forest",95,1,0,"Meksyk",6.6,87,"corki-lasu","C%C3%B3rki+lasu-2026-10120078"],
-["Człowiek wart 6 miliardów dolarów","The 6 Billion Dollar Man",null,0,0,"—",null,null,null,"Cz%C5%82owiek+wart+6+miliard%C3%B3w+dolar%C3%B3w-2025-10081247"],
-["Czy pomniki umierają?","Statues Also Die?",12,0,0,"—",null,null,"czy-pomniki-umieraja","Czy+pomniki+umieraj%C4%85-2026-10122954"],
-["Daleko od Bejrutu","Far From Beyrouth",22,0,1,"Belgia",5.3,10,"daleko-od-bejrutu","Daleko+od+Bejrutu-2025-10118982"],
-["Dancers Only","Dancers Only",20,0,0,"—",null,null,"wstep-tylko-dla-tancerek","Dancers+Only-2026-10114888"],
-["Dzieci, których już nie ma","Children No More",30,0,1,"USA/W.Brytania/Izrael",5.7,291,"dzieci-ktorych-juz-nie-ma","Dzieci%2C+kt%C3%B3rych+ju%C5%BC+nie+ma-2025-10113819"],
-["Dzikie szaleństwo","Better Go Mad In the Wild",84,0,0,"—",null,null,"dzikie-szalenstwo","Dzikie+szale%C5%84stwo-2025-10085428"],
-["Efekt architektury","Building Visions 2",105,0,0,"—",null,null,"efekt-architektury","Efekt+architektury-2026-10122840"],
-["Ewa – ostatnia lekcja","Ewa – The Last Lesson",65,0,2,"Polska/Włochy",4.4,15,"ewa-ostatnia-lekcja","Ewa+ostatnia+lekcja-2025-10119675"],
-["Freak Show","Freak Show",75,0,1,"Polska",6.9,92,"freak-show","Freak+Show-2026-10065590"],
-["Gorzkie owoce","Fruits of Despair",29,0,1,"Iran",6.8,17,"gorzkie-owoce","Gorzkie+owoce-2026-10117183"],
-["Habibi Hussein","Habibi Hussein",96,0,0,"—",null,null,"habibi-hussein","Habibi+Hussein-2025-10119409"],
-["Hassan","Hassan",30,0,1,"Francja/Palestyna",6.8,22,"blok-1-przerwane-dorastanie-1","Hassan-2025-10118984"],
-["Henry to dziewczyna, która lubi pospać","Henry Is a Girl Who Likes to Sleep",14,0,0,"—",null,null,"henry-to-dziewczyna-ktora-lubi-pospac","Henry+to+dziewczyna%2C+kt%C3%B3ra+lubi+pospa%C4%87-2026-10116954"],
-["Idź z duszą na dłoni","Put Your Soul on Your Hand and Walk",113,0,0,"—",null,null,"idz-z-dusza-na-dloni","Id%C5%BA+z+dusz%C4%85+na+d%C5%82oni-2025-10081526"],
-["Irvine Welsh. Rzeczywistość to za mało","Irvine Welsh: Reality Is Not Enough",90,0,0,"—",null,null,"irvine-welsh-rzeczywistosc-to-za-malo","Irvine+Welsh.+Rzeczywisto%C5%9B%C4%87+to+za+ma%C5%82o-2025-10120054"],
-["Istoty czujące","Sentient Beings",null,0,0,"—",null,null,null,"Istoty+czuj%C4%85ce-2026-10111760"],
-["Jak głęboka jest twoja miłość?","How Deep is Your Love",100,0,1,"Wielka Brytania",7.2,60,"jak-gleboka-jest-twoja-milosc","Jak+g%C5%82%C4%99boka+jest+twoja+mi%C5%82o%C5%9B%C4%87-2025-10107580"],
-["Jak złapać motyla?","How to Catch a Butterfly",27,1,0,"Holandia",7.3,19,"jak-zlapac-motyla","Jak+z%C5%82apa%C4%87+motyla-2026-10118988"],
-["Jak zrobić film o betonie","How to Make a Film About Concrete",null,0,0,"—",null,null,null,"Jak+zrobi%C4%87+film+o+betonie-2026-10111735"],
-["Jane Elliot kontra reszta świata","Jane Elliott vs. the World",null,0,0,"—",null,null,null,"Jane+Elliot+kontra+reszta+%C5%9Bwiata-2026-10111736"],
-["Jedna na milion","One in a Million",null,0,0,"—",null,null,null,"Jedna+na+milion-2026-10111761"],
-["Joybubbles","Joybubbles",null,0,0,"—",null,null,null,"Joybubbles-2026-10110914"],
-["Jutro było wczoraj","Tomorrow Was Yesterday",null,0,0,"—",null,null,null,"Jutro+by%C5%82o+wczoraj-2025-10107853"],
-["Już dość","Enough",null,0,0,"—",null,null,null,"Ju%C5%BC+do%C5%9B%C4%87-2026-10114506"],
-["Kandydaci śmierci","Death Candidates",null,0,0,"—",null,null,null,"Kandydaci+%C5%9Bmierci-2025-10105405"],
-["Kikuyu Land","Kikuyu Land",94,0,0,"—",null,null,"ziemia-kikuju","Kikuyu+Land-2026-10111981"],
-["Kłopotliwy niedźwiedź","Troublesome Bear",null,0,0,"—",null,null,null,"K%C5%82opotliwy+nied%C5%BAwied%C5%BA-2026-10111098"],
-["Krokodyl","Crocodile",100,1,1,"Nowa Zelandia/Nigeria",6.7,36,"krokodyl","Krokodyl-2026-10116978"],
-["Król Hamlet","King Hamlet",null,0,0,"—",null,null,null,"Kr%C3%B3l+Hamlet-2025-10118877"],
-["Królowe taksówek","Auto Queens",30,0,1,"Indie",6.9,15,"blok-6-czego-pozadamy-o-czym-marzymy-2","Kr%C3%B3lowe+taks%C3%B3wek-2025-10118989"],
-["Kto zabił Alexa Odeha?","Who Killed Alex Odeh?",null,0,0,"—",null,null,null,"Kto+zabi%C5%82+Alexa+Odeha-2026-10110919"],
-["La Scala. Moc przeznaczenia","La Scala: The Force of Destiny",93,0,2,"Francja/Włochy",6.1,15,"la-scala-moc-przeznaczenia","La+Scala.+Moc+przeznaczenia-2025-10116080"],
-["Lech Janerka – śpij, śpij inteligencie","Lech Janerka – Sleep, Sleep Intelligentsia",null,0,0,"Polska",null,null,null,"Lech+Janerka+%E2%80%93+%C5%9Bpij%2C+%C5%9Bpij+inteligencie-2025-10121436"],
-["Lis i różowy księżyc","A Fox Under a Pink Moon",77,3,2,"Dania/Francja/Iran/USA/W.Brytania",7.6,53,"lis-i-rozowy-ksiezyc","Lis+i+r%C3%B3%C5%BCowy+ksi%C4%99%C5%BCyc-2025-10118815"],
-["Lombard","The Pawnshop",75,0,0,"—",null,null,"lombard",null],
-["Love-22-Love","Love-22-Love",84,0,0,"—",null,null,"love-22-love","Love+22+Love-2025-10120372"],
-["Małe, duże i daleko","Small, Big and Far Away",null,0,0,"—",null,null,null,"Ma%C5%82e%2C+du%C5%BCe+i+daleko-2024-10062490"],
-["Maluję swój autoportret, a wychodzi mi moja siostra","I'm Painting a Self-portrait…",11,0,1,"Polska",7.2,17,"maluje-swoj-autoportret-a-wychodzi-mi-moja-siostra","Maluj%C4%99+sw%C3%B3j+autoportret%2C+a+wychodzi+mi+moja+siostra-2026-10118973"],
-["Mam rzekę we krwi","I Follow Rivers",98,0,0,"—",null,null,"mam-rzeke-we-krwi","Mam+rzek%C4%99+we+krwi-2026-10118870"],
-["Mamo, czy żyrafy płaczą?","Amma, Do Giraffes Cry?",26,0,1,"Czechy",5.8,25,"mamo-czy-zyrafy-placza","Mamo%2C+czy+%C5%BCyrafy+p%C5%82acz%C4%85-2025-10118997"],
-["Mariinka","Mariinka",95,2,3,"Belgia/Holandia/Niemcy/Szwecja",7.4,120,"mariinka","Mariinka-2026-10121011"],
-["Marlee Matlin, nie jesteś sama","Marlee Matlin: Not Alone",null,0,0,"—",null,null,null,"Marlee+Matlin%2C+nie+jeste%C5%9B+sama-2025-10074518"],
-["Mentor","Mentor",14,0,1,"Polska",7.5,36,"blok-1-przerwane-dorastanie-2","Mentor-2026-10118976"],
-["Meredith Monk – Portret w kawałkach","Monk in Pieces",95,0,0,"—",null,null,"meredith-monk-portret-w-kawalkach","Meredith+Monk+portret+w+kawa%C5%82kach-2025-10070495"],
-["Miasto poetów","City of Poets",22,0,1,"Holandia",7.1,34,"miasto-poetow","Miasto+Poet%C3%B3w-2024-10048146"],
-["Militantropos","Militantropos",111,0,0,"—",null,null,"militantropos","Militantropos-2025-10079173"],
-["Mistrz przemówień","Master of Speeches",null,0,0,"—",null,null,null,"Mistrz+przem%C3%B3wie%C5%84-2026-10111307"],
-["Mistrzostwa świata w gwizdaniu","Whistle",84,0,0,"—",null,null,"mistrzostwa-swiata-w-gwizdaniu","Mistrzostwa+%C5%9Bwiata+w+gwizdaniu-2025-10099679"],
-["Moi Themersonowie","My Themersons",80,0,3,"Polska",6.4,99,"moi-themersonowie","Moi+Themersonowie-2026-10119677"],
-["Moje dziecko","My Child",null,0,0,"—",null,null,null,"Moje+dziecko-2026-10113962"],
-["Moje wszystkie głosy","My Word Against Mine",112,1,0,"Holandia",7.6,93,"moje-wszystkie-glosy","Moje+wszystkie+g%C5%82osy-2025-10120840"],
-["Molly kontra algorytmy","Molly vs the Machines",83,0,0,"—",null,null,"molly-kontra-algorytmy","Molly+kontra+algorytmy-2026-10122936"],
-["Na końcu internetu","The End of the Internet",88,0,0,"—",null,null,"na-koncu-internetu",null],
-["Na niebieskiej drodze – historia Edny O'Brien","Blue Road – The Edna O'Brien Story",99,0,1,"Irlandia/Wielka Brytania",7.3,19,"na-niebieskiej-drodze-historia-edny-o-brien","Na+niebieskiej+drodze+historia+Edny+O%27Brien-2024-10065830"],
-["Najpiękniejszy mężczyzna na świecie","The Most Beautiful Man in the World",null,0,0,"—",null,null,null,"Najpi%C4%99kniejszy+m%C4%99%C5%BCczyzna+na+%C5%9Bwiecie-2026-10117503"],
-["Najstarsza osoba na świecie","The Oldest Person in the World",null,0,0,"—",null,null,null,"Najstarsza+osoba+na+%C5%9Bwiecie-2026-10112398"],
-["Naturalna dzikość serca","A New Kind of Wilderness",83,0,0,"—",null,null,"naturalna-dzikosc-serca","Naturalna+dziko%C5%9B%C4%87+serca-2024-874356"],
-["Niedźwiedzica","Frost Without Snow and Ice",96,0,1,"Niemcy/Norwegia",7.4,87,"niedzwiedzica","Nied%C5%BAwiedzica-2026-10120396"],
-["Nóż i wersety: zamach na Salmana Rushdiego","Knife and Verses",null,0,0,"—",null,null,null,"N%C3%B3%C5%BC+i+wersety%3A+zamach+na+Salmana+Rushdiego-2026-10111977"],
-["Nurt","Current",null,0,0,"—",null,null,null,"Nurt-2026-10119680"],
-["O czasie i wodzie","About Time and Water",null,0,0,"—",null,null,null,"O+czasie+i+wodzie-2026-10112397"],
-["Oferta (Cold Call)","Cold Call",null,0,0,"—",null,null,null,"Cold+Call-2025-10122841"],
-["Ogień w nas","A Fire There",94,0,0,"—",null,null,"ogien-w-nas","Ogie%C5%84+w+nas-2026-10120389"],
-["Ona","She",null,0,0,"—",null,null,null,"Ona-2025-10090991"],
-["Orwell: 2 + 2 = 5","Orwell: 2 + 2 = 5",119,0,2,"Francja/USA",5.7,177,"orwell-2-2-5","Orwell%3A+2+%2B+2+%3D+5-2025-10078613"],
-["Pani z Północy pozna pana z Południa","North Lady Meets South Man",null,0,0,"—",null,null,null,"Pani+z+P%C3%B3%C5%82nocy+pozna+pana+z+Po%C5%82udnia-2025-10103138"],
-["Piąta pora roku","The Fifth Season",60,0,0,"—",null,null,"piata-pora-roku","Pi%C4%85ta+pora+roku-2025-10118872"],
-["Pieniądze to wszystko","Money Is Everything",null,0,0,"—",null,null,null,"Pieni%C4%85dze+to+wszystko-2026-10110910"],
-["Piękny rok","La belle année",94,0,0,"—",null,null,"piekny-rok","Pi%C4%99kny+rok-2026-10116272"],
-["Pieśni lasu","Songs of the Forest",null,0,0,"—",null,null,null,"Pie%C5%9Bni+lasu-2025-10111381"],
-["Pieśni wielorybów","Whale Nation",88,0,0,"—",null,null,"piesni-wielorybow",null],
-["Pod osłoną lasu","Life Beyond the Pine Curtain",77,0,0,"—",null,null,"pod-oslona-lasu","Pod+os%C5%82on%C4%85+lasu-2025-10097887"],
-["Pod powierzchnią *","Bedrock",102,0,0,"Kanada/Polska",6.6,439,null,"Pod+powierzchni%C4%85-2025-10070375"],
-["Pod Rzymem, nad Tybrem","Cesare Through Time",90,0,0,"—",null,null,"pod-rzymem-nad-tybrem","Pod+Rzymem%2C+nad+Tybrem-2024-10120275"],
-["Polityczki mimo woli","Not Made For Politics",89,0,0,"—",null,null,"polityczki-mimo-woli","Polityczki+mimo+woli-2025-10122170"],
-["Pomiędzy woskiem i złotem","Wax & Gold",97,0,3,"Austria/Włochy",6.0,79,"pomiedzy-woskiem-i-zlotem","Pomi%C4%99dzy+woskiem+i+z%C5%82otem-2026-10116504"],
-["Portret zdezorientowanego ojca","Portrait of a Confused Father",92,0,0,"Norwegia",7.1,501,"portret-zdezorientowanego-ojca","Portret+zdezorientowanego+ojca-2025-10077205"],
-["Portret, który uratował mi życie","I Believe the Portrait Saved Me",10,0,1,"Holandia/Kosowo",6.0,12,"blok-4-sytuacje-graniczne-2","Portret%2C+kt%C3%B3ry+uratowa%C5%82+mi+%C5%BCycie-2025-10073607"],
-["Poza kadrem","The Hidden Face of the Earth",68,0,1,"Francja",6.0,40,"poza-kadrem","Poza+kadrem-2026-10116913"],
-["Prawie na zawsze","Almost Forever",86,0,0,"—",null,null,"prawie-na-zawsze","Prawie+na+zawsze-2026-10122808"],
-["Proszę nie siadać","Please Do Not Sit",60,0,0,"—",null,null,"prosze-nie-siadac",null],
-["Przepis na demokrację","Cooking Up Democracy",83,0,0,"—",null,null,"przepis-na-demokracje",null],
-["Przesuwając granice","Shifting Baselines",101,0,1,"Kanada",5.8,32,"przesuwajac-granice","Przesuwaj%C4%85c+granice-2025-10121506"],
-["Ptaki wojny","Birds of War",null,0,0,"—",null,null,null,"Ptaki+wojny-2026-10111980"],
-["Remake","Remake",null,0,0,"—",null,null,null,"Remake-2025-10093360"],
-["Riefenstahl","Riefenstahl",115,0,0,"—",null,null,"riefenstahl",null],
-["Rio nadal jest piękne","Rio Remains Beautiful",24,0,1,"Belgia/Brazylia/Szwajcaria",6.1,19,"blok-2-wszystko-zostaje-w-rodzinie-1","Rio+nadal+jest+pi%C4%99kne-2025-10118999"],
-["Roberto Rossellini – życie bez scenariusza","Roberto Rossellini – Living Without A Script",86,0,2,"Włochy",7.2,18,"roberto-rossellini-zycie-bez-scenariusza","Roberto+Rossellini+%E2%80%93+%C5%BCycie+bez+scenariusza-2025-10118721"],
-["Runa Simi","Runa Simi",86,0,0,"—",null,null,"runa-simi","Runa+simi-2025-10118396"],
-["Sama nie wiem","I'm Not Sure",10,0,1,"Szwajcaria",7.0,20,"sama-nie-wiem","Sama+nie+wiem-2025-10119000"],
-["Sawyer Avenue, niedzielne popołudnie","Sawyer Avenue, Sunday Afternoon",null,0,0,"—",null,null,null,"Sawyer+Avenue%2C+niedzielne+popo%C5%82udnie-2026-10122945"],
-["Ścieżka dźwiękowa zamachu stanu","Soundtrack to a Coup d'Etat",150,0,0,"—",null,null,"sciezka-dzwiekowa-zamachu-stanu",null],
-["Sekretne życie roślin","Flying Scents – Of Plants & People",66,0,1,"Szwajcaria",5.5,48,"sekretne-zycie-roslin","Sekretne+%C5%BCycie+ro%C5%9Blin-2025-10091917"],
-["Simona","Simona",91,0,0,"—",null,null,"simona",null],
-["Siostrzeństwo świętej sauny","Smoke Sauna Sisterhood",89,0,0,"—",null,null,"siostrzenstwo-swietej-sauny",null],
-["Siri Hustvedt i wspomnienia przyszłości","Siri Hustvedt and Memories of the Future",null,0,0,"—",null,null,null,"Siri+Hustvedt+i+wspomnienia+przysz%C5%82o%C5%9Bci-2026-10116905"],
-["Ślady","Traces",85,2,0,"Polska/Ukraina",6.7,10,"slady","%C5%9Alady-2026-10116960"],
-["Sny o lepszej przeszłości","Dreams for a Better Past",21,0,0,"—",null,null,"sny-o-lepszej-przeszlosci","Sny+o+lepszej+przesz%C5%82o%C5%9Bci-2025-10122843"],
-["Śpiewając daleko od domu","A Song Without Home",75,0,1,"Austria/Dania/Gruzja/USA",6.8,21,"spiewajac-daleko-od-domu","%C5%9Apiewaj%C4%85c+daleko+od+domu-2026-10118002"],
-["Sun Ra. Wizja staje się dźwiękiem","Sun Ra: Do The Impossible",85,0,2,"USA",6.2,40,"sun-ra-wizja-staje-sie-dzwiekiem","Sun+Ra%3A+Wizja+staje+si%C4%99+d%C5%BAwi%C4%99kiem-2025-10120565"],
-["Świat po pracy","After Work",81,0,0,"—",null,null,"swiat-po-pracy",null],
-["Sygnalista","Whistleblower",91,0,1,"Niemcy",null,null,"sygnalista","Sygnalista-2025-10121504"],
-["Syn uzdrowiciela","Supernatural",84,0,0,"—",null,null,"syn-uzdrowiciela",null],
-["Szkoda, że nareszcie","At Least. At Last.",95,0,0,"Polska",7.5,610,"szkoda-ze-nareszcie","Szkoda%2C+%C5%BCe+nareszcie-2025-10080944"],
-["Szukając równowagi","Elements of(f) Balance",98,0,1,"Austria",5.7,9,"szukajac-rownowagi","Szukaj%C4%85c+r%C3%B3wnowagi-2025-10121508"],
-["Tajemniczy prezent","The Mysterious Gift",null,0,0,"—",null,null,null,"Tajemniczy+prezent-2026-10120394"],
-["Tokio na winylach","A Century in Sound",106,0,0,"—",null,null,"tokio-na-winylach","Tokio+na+winylach-2024-10122787"],
-["Twin Days","Twin Days",28,0,1,"Polska",5.6,26,"twin-days","Twin+Days-2026-10118974"],
-["Uciszone","Silenced",null,0,0,"—",null,null,null,"Uciszone-2026-10110911"],
-["Underland","Underland",null,0,0,"—",null,null,null,"Underland-2025-10113035"],
-["Upadek","Collapse",79,0,1,"Izrael",6.7,28,"upadek","Upadek-2026-10117385"],
-["U źródła światła – 11 pieśni dla Fidżi","At the Source of Light – 11 Songs for Fiji",null,0,0,"—",null,null,null,"U+%C5%BAr%C3%B3d%C5%82a+%C5%9Bwiat%C5%82a+11+pie%C5%9Bni+dla+Fid%C5%BCi-2026-10120274"],
-["W czterech ścianach","Our Walls",8,0,1,"Słowenia",5.7,14,"w-czterech-scianach","W+czterech+%C5%9Bcianach-2025-10119016"],
-["W stronę słońca","Towards the Sun",92,0,0,"—",null,null,"w-strone-slonca",null],
-["We Want the Funk","We Want the Funk",85,0,2,"USA",7.3,86,"we-want-the-funk","We+Want+the+Funk-2025-10120065"],
-["Wiedźmy","Hex",92,0,1,"Norwegia",6.6,80,"wiedzmy","Wied%C5%BAmy-2026-10120390"],
-["Wszystkie życia mojego ojca","The Lives of My Father",86,0,0,"—",null,null,"wszystkie-zycia-mojego-ojca","Wszystkie+%C5%BCycia+mojego+ojca-2026-10118394"],
-["Wszystko, co się świeci","Everything That Shines",null,0,0,"—",null,null,null,"Wszystko%2C+co+si%C4%99+%C5%9Bwieci-2025-10112776"],
-["Wszystko, o co gram","Everything I Play For",36,0,0,"—",null,null,"wszystko-o-co-gram","Wszystko%2C+o+co+gram-2026-10119389"],
-["Wszyscy na Kenmure Street","Everyone on Kenmure Street",null,0,0,"—",null,null,null,"Wszyscy+na+Kenmure+Street-2026-10111979"],
-["Wszędzie dobrze wszędzie źle","Two Mountains Weighing Down My Chest",86,1,3,"Holandia/Niemcy",6.8,116,"wszedie-dobrze-wszedie-zle","Wsz%C4%99dzie+dobrze+wsz%C4%99dzie+%C5%BAle-2026-10116903"],
-["WTO/99","WTO/99",null,0,0,"—",null,null,null,"WTO+99-2025-10103076"],
-["Wycieczka z przewodniczką","Guided Tour",15,1,0,"Francja/Portoryko",5.6,19,"wycieczka-z-przewodniczka","Wycieczka+z+przewodniczk%C4%85-2026-10119021"],
-["Wyznania pieprzyka","Confessions of a Mole",92,1,1,"Chiny/Polska",5.7,92,"wyznania-pieprzyka","Wyznania+pieprzyka-2025-10110659"],
-["Wyznania szwedzkiego mężczyzny","Confessions of a Swedish Man",96,0,0,"—",null,null,"wyznania-szwedzkiego-mezczyzny","Wyznania+szwedzkiego+m%C4%99%C5%BCczyzny-2025-10114243"],
-["Yanuni","Yanuni",112,0,1,"Australia/Brazylia/Kanada/Niemcy/USA",7.2,44,"yanuni","Yanuni-2025-10103189"],
-["Yo (Miłość jest zbuntowanym ptakiem)","Yo (Love Is a Rebellious Bird)",null,0,0,"—",null,null,null,"Yo+%28Mi%C5%82o%C5%9B%C4%87+jest+zbuntowanym+ptakiem%29-2026-10113328"],
-["Yintah","Yintah",110,0,0,"—",null,null,"yintah",null],
-["Zapytaj E. Jean","Ask E. Jean",null,0,0,"—",null,null,null,"Zapytaj+E.+Jean-2025-10118816"],
-["Zielone światło","Green Light",null,0,0,"—",null,null,null,"Zielone+%C5%9Bwiat%C5%82o-2025-10090944"],
-];
 
-let sortKey='pl',sortDir=1;
-function rc(r){if(r==null)return '';if(r>=7.5)return 's-hi';if(r>=6.5)return 's-mid';return 's-lo';}
-function sort(k){
-  if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=1;}
-  document.querySelectorAll('thead th[id]').forEach(el=>{el.className='';});
-  const el=document.getElementById('h-'+k);
-  if(el)el.className=sortDir===1?'asc':'desc';
-  if(document.getElementById('sort-sel'))document.getElementById('sort-sel').value=k;
-  render();
-}
-function render(){
-  const q=document.getElementById('search').value.toLowerCase();
-  const f=document.getElementById('filter').value;
-  let data=RAW.filter(r=>{
-    const m=r[0].toLowerCase().includes(q)||r[1].toLowerCase().includes(q)||(r[5]||'').toLowerCase().includes(q);
-    if(!m)return false;
-    if(f==='wins')return r[3]>0;
-    if(f==='noms')return r[4]>0||r[3]>0;
-    if(f==='rated')return r[6]!=null;
-    if(f==='nofw')return !r[9];
-    return true;
-  });
-  const km={pl:0,en:1,dur:2,wins:3,noms:4,ctr:5,rating:6,votes:7};
-  data.sort((a,b)=>{
-    const i=km[sortKey]??0;
-    const av=a[i],bv=b[i];
-    if(av==null&&bv==null)return 0;
-    if(av==null)return sortDir;
-    if(bv==null)return -sortDir;
-    if(typeof av==='string')return sortDir*av.localeCompare(bv,'pl');
-    return sortDir*(bv-av); // desc for numbers by default
-  });
-  // flip for pl/en/ctr (should be asc by default)
-  if(['pl','en','ctr'].includes(sortKey)&&sortDir===1){data.sort((a,b)=>{
-    const i=km[sortKey];
-    return a[i].localeCompare(b[i],'pl');
-  });}
-  const tbody=document.getElementById('tbody');
-  if(!data.length){tbody.innerHTML='';document.getElementById('empty').style.display='block';return;}
-  document.getElementById('empty').style.display='none';
-  tbody.innerHTML=data.map(r=>{
-    const rS=r[6]!=null?`<span class="rating ${rc(r[6])}">${r[6].toFixed(1)}</span>`:'<span class="dash">—</span>';
-    const vS=r[7]!=null?r[7].toLocaleString('pl'):'<span class="dash">—</span>';
-    const wS=r[3]>0?`<span class="badge b-win">🏆 ${r[3]}</span>`:'<span class="dash">—</span>';
-    const nS=r[4]>0?`<span class="badge b-nom">★ ${r[4]}</span>`:'<span class="dash">—</span>';
-    const mL=r[8]?`<a href="${BM}${r[8]}" target="_blank" class="lnk lnk-m">MDAG ↗</a>`:`<a class="lnk lnk-none">MDAG</a>`;
-    const fL=r[9]?`<a href="${BF}${r[9]}" target="_blank" class="lnk lnk-f">Filmweb ↗</a>`:`<a class="lnk lnk-none">Filmweb</a>`;
-    return `<tr><td title="${r[0]}">${r[0]}</td><td title="${r[1]}" style="color:#888;font-size:12px">${r[1]}</td><td class="ctr" title="${r[5]}">${r[5]}</td><td class="num">${r[2]||'—'}</td><td style="text-align:center">${rS}</td><td class="num">${vS}</td><td style="text-align:center">${wS}</td><td style="text-align:center">${nS}</td><td class="links" style="display:flex;gap:4px;align-items:center;padding:8px 10px">${mL}${fL}</td></tr>`;
-  }).join('');
-  document.getElementById('s-total').textContent=data.length;
-  document.getElementById('s-rated').textContent=data.filter(r=>r[6]!=null).length;
-  document.getElementById('s-wins').textContent=data.filter(r=>r[3]>0).length;
-  const rated=data.filter(r=>r[6]!=null);
-  document.getElementById('s-avg').textContent=rated.length?(rated.reduce((s,r)=>s+r[6],0)/rated.length).toFixed(2):'—';
-}
-document.getElementById('search').addEventListener('input',render);
-document.getElementById('filter').addEventListener('change',render);
-render();
-</script>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MDAG 2026 — Filmy (23. edycja)</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f0f;
+      color: #e8e8e8;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a1a1a;
+      border-bottom: 1px solid #2a2a2a;
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    header .sub {
+      font-size: .85rem;
+      color: #888;
+    }
+
+    .controls {
+      background: #141414;
+      border-bottom: 1px solid #222;
+      padding: 1rem 2rem;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .controls input {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #e8e8e8;
+      padding: 8px 12px;
+      font-size: 14px;
+      width: 240px;
+    }
+
+    .controls input:focus {
+      outline: none;
+      border-color: #555;
+    }
+
+    .controls select {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #e8e8e8;
+      padding: 8px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+      margin-left: auto;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      background: #1e1e1e;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 6px 14px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .stat-val {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      padding: 0 2rem 3rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 1rem;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 10px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-bottom: 1px solid #2a2a2a;
+      cursor: pointer;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      background: #0f0f0f;
+    }
+
+    thead th:hover {
+      color: #ccc;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #1a1a1a;
+      transition: background .1s;
+    }
+
+    tbody tr:hover {
+      background: #1a1a1a;
+    }
+
+    td {
+      padding: 8px 10px;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 220px;
+    }
+
+    td.ctr {
+      font-size: 11px;
+      color: #666;
+      max-width: 140px;
+    }
+
+    td.num {
+      text-align: right;
+      color: #888;
+    }
+
+    td.links {
+      white-space: nowrap;
+      overflow: visible;
+      max-width: none;
+    }
+
+    .rating {
+      font-weight: 700;
+    }
+
+    .s-hi {
+      color: #4ade80;
+    }
+
+    .s-mid {
+      color: #60a5fa;
+    }
+
+    .s-lo {
+      color: #f97316;
+    }
+
+    .dash {
+      color: #444;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .b-win {
+      background: rgba(74, 222, 128, .15);
+      color: #4ade80;
+    }
+
+    .b-nom {
+      background: rgba(96, 165, 250, .15);
+      color: #60a5fa;
+    }
+
+    th.asc::after {
+      content: " ↑";
+      color: #aaa;
+    }
+
+    th.desc::after {
+      content: " ↓";
+      color: #aaa;
+    }
+
+    a.lnk {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 5px;
+      text-decoration: none;
+      border: 1px solid;
+      transition: background .15s;
+    }
+
+    a.lnk-m {
+      color: #f87171;
+      border-color: #f87171;
+      background: rgba(248, 113, 113, .08);
+    }
+
+    a.lnk-m:hover {
+      background: rgba(248, 113, 113, .18);
+    }
+
+    a.lnk-f {
+      color: #60a5fa;
+      border-color: #60a5fa;
+      background: rgba(96, 165, 250, .08);
+    }
+
+    a.lnk-f:hover {
+      background: rgba(96, 165, 250, .18);
+    }
+
+    a.lnk-none {
+      color: #444;
+      border-color: #333;
+      background: transparent;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 3rem;
+      color: #555;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 11px;
+      color: #444;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div>
+      <h1>🎬 MDAG 2026 — Filmy</h1>
+      <div class="sub">23. Millennium Docs Against Gravity · Oceny: Filmweb · Dane: maj 2026</div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Filmy</div>
+        <div class="stat-val" id="s-total">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Z oceną</div>
+        <div class="stat-val" id="s-rated">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Nagrodzone</div>
+        <div class="stat-val" id="s-wins">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Śr. ocena</div>
+        <div class="stat-val" id="s-avg">—</div>
+      </div>
+    </div>
+  </header>
+  <div class="controls">
+    <input type="text" id="search" placeholder="🔍  Szukaj tytułu lub kraju…">
+    <select id="filter">
+      <option value="all">Wszystkie filmy</option>
+      <option value="wins">Nagrodzone</option>
+      <option value="noms">Nominowane lub nagrodzone</option>
+      <option value="rated">Z oceną Filmweb</option>
+      <option value="nofw">Brak linku Filmweb</option>
+    </select>
+    <select id="sort-sel" onchange="sort(this.value)">
+      <option value="pl">Tytuł A–Z</option>
+      <option value="rating">Ocena (malejąco)</option>
+      <option value="votes">Głosy (malejąco)</option>
+      <option value="dur">Czas trwania</option>
+      <option value="wins">Nagrody</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:22%" onclick="sort('pl')" id="h-pl">Tytuł polski</th>
+          <th style="width:16%" onclick="sort('en')" id="h-en">Tytuł angielski</th>
+          <th style="width:13%" onclick="sort('ctr')" id="h-ctr">Kraj</th>
+          <th style="width:5%;text-align:right" onclick="sort('dur')" id="h-dur">min</th>
+          <th style="width:6%;text-align:center" onclick="sort('rating')" id="h-rating">Ocena</th>
+          <th style="width:6%;text-align:right" onclick="sort('votes')" id="h-votes">Głosy</th>
+          <th style="width:8%;text-align:center" onclick="sort('wins')" id="h-wins">Nagrody</th>
+          <th style="width:8%;text-align:center" onclick="sort('noms')" id="h-noms">Nom.</th>
+          <th style="width:16%">Linki</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="empty" class="empty" style="display:none">Brak wyników dla podanego zapytania.</div>
+  </div>
+  <footer>Dane zebrane z mdag.pl i filmweb.pl · Maj 2026 · * = film z edycji MDAG 2025</footer>
+  <script>
+    const BM = 'https://mdag.pl/pl/ogladaj-online/23/film/';
+    const BF = 'https://www.filmweb.pl/film/';
+    // [pl, en, dur, wins, noms, country, rating, votes, mdag_slug, fw_slug]
+    const RAW = [
+      ["10k", "10k", 32, 0, 1, "Francja/Hiszpania", 5.8, 16, "10k", "%2B10k-2025-10082313"],
+      ["Aborcyjna imprezka", "Abortion Party", 13, 0, 0, "—", null, null, "aborcyjna-imprezka", "Aborcyjna+imprezka-2025-10122788"],
+      ["Air Horse One", "Air Horse One", 21, 0, 1, "Belgia/Szwajcaria", 5.9, 28, "blok-3-o-ludziach-i-zwierzetach-1", "Air+Horse+One-2025-10118979"],
+      ["Amazomania", "Amazomania", null, 0, 0, "—", null, null, null, "Amazomania-2026-10119981"],
+      ["André jest idiotą", "André est un idiot", null, 0, 0, "—", null, null, null, "Andr%C3%A9+jest+idiot%C4%85-2025-10071769"],
+      ["Apokalipsa wczoraj, dzisiaj, jutro i pojutrze", "Apocalypse Yesterday…", 21, 0, 1, "Czechy/Ukraina", 4.9, 12, "blok-6-czego-pozadamy-o-czym-marzymy-1", "Apokalipsa+wczoraj%2C+dzisiaj%2C+jutro+i+pojutrze-2025-10097169"],
+      ["Arek.Mama.Panorama", "Arek.Mama.Panorama", null, 0, 0, "—", null, null, null, "Arek.Mama.Panorama-2026-10119673"],
+      ["Atomowa kolonia", "Boomerang Atomic", 22, 0, 0, "—", null, null, "blok-5-w-pulapce-historii-1", "Atomowa+kolonia-2025-10093427"],
+      ["Barbara Forever", "Barbara Forever", 102, 0, 1, "USA", 6.6, 33, "barbara-forever", "Barbara+Forever-2026-10108003"],
+      ["Benita", "Benita", 81, 0, 0, "USA", null, null, "benita", "Benita-2025-10118879"],
+      ["Bez końca", "Without End", null, 0, 0, "—", null, null, null, "Bez+ko%C5%84ca-2026-10081351"],
+      ["Białe kłamstwa", "White Lies", 98, 0, 0, "—", null, null, "biale-klamstwa", "Bia%C5%82e+k%C5%82amstwa-2025-10122295"],
+      ["Bibliotekarki", "The Librarians", null, 0, 0, "—", null, null, null, "Bibliotekarki-2025-10074521"],
+      ["Broken English", "Broken English", 96, 0, 2, "Wielka Brytania", 6.3, 133, "broken-english", "%C5%81amana+angielszczyzna-2025-10092246"],
+      ["Bugboy", "Bugboy", null, 0, 0, "—", null, null, null, "Bugboy-2026-10119394"],
+      ["Bujając w obłokach", "Heads in the Clouds", 12, 0, 1, "Polska", 5.4, 22, "bujajac-w-oblokach", "Bujaj%C4%85c+w+ob%C5%82okach-2026-10118975"],
+      ["Był sobie śnieg", "Melt", 128, 0, 1, "Austria", 6.3, 47, "byl-sobie-snieg", "By%C5%82+sobie+%C5%9Bnieg-2025-10103144"],
+      ["Ciało wojny", "Body of War", null, 0, 0, "—", null, null, null, "Cia%C5%82o+wojny-2026-10119674"],
+      ["Christiania", "Christiania", 95, 0, 0, "—", null, null, "christiania", "Christiania-2026-10122259"],
+      ["Cisza przed burzą", "Storm Alerts", 82, 0, 0, "—", null, null, "cisza-przed-burza", "Cisza+przed+burz%C4%85-2025-10071997"],
+      ["Co ukrywa Elon Musk?", "Elon Musk Unveiled", 90, 0, 0, "—", null, null, "co-ukrywa-elon-musk", "Co+ukrywa+Elon+Musk-2025-10114914"],
+      ["Coexistence, My Ass! *", "Coexistence, My Ass!", 95, 0, 0, "USA/Francja", 7.3, 573, null, "Coexistence%2C+My+Ass-2025-10068918"],
+      ["Córki góry", "Daughters of the Mountain", null, 0, 0, "—", null, null, null, "C%C3%B3rki+g%C3%B3ry-2026-10111401"],
+      ["Córki lasu", "Daughters of the Forest", 95, 1, 0, "Meksyk", 6.6, 87, "corki-lasu", "C%C3%B3rki+lasu-2026-10120078"],
+      ["Człowiek wart 6 miliardów dolarów", "The 6 Billion Dollar Man", null, 0, 0, "—", null, null, null, "Cz%C5%82owiek+wart+6+miliard%C3%B3w+dolar%C3%B3w-2025-10081247"],
+      ["Czy pomniki umierają?", "Statues Also Die?", 12, 0, 0, "—", null, null, "czy-pomniki-umieraja", "Czy+pomniki+umieraj%C4%85-2026-10122954"],
+      ["Daleko od Bejrutu", "Far From Beyrouth", 22, 0, 1, "Belgia", 5.3, 10, "daleko-od-bejrutu", "Daleko+od+Bejrutu-2025-10118982"],
+      ["Dancers Only", "Dancers Only", 20, 0, 0, "—", null, null, "wstep-tylko-dla-tancerek", "Dancers+Only-2026-10114888"],
+      ["Dzieci, których już nie ma", "Children No More", 30, 0, 1, "USA/W.Brytania/Izrael", 5.7, 291, "dzieci-ktorych-juz-nie-ma", "Dzieci%2C+kt%C3%B3rych+ju%C5%BC+nie+ma-2025-10113819"],
+      ["Dzikie szaleństwo", "Better Go Mad In the Wild", 84, 0, 0, "—", null, null, "dzikie-szalenstwo", "Dzikie+szale%C5%84stwo-2025-10085428"],
+      ["Efekt architektury", "Building Visions 2", 105, 0, 0, "—", null, null, "efekt-architektury", "Efekt+architektury-2026-10122840"],
+      ["Ewa – ostatnia lekcja", "Ewa – The Last Lesson", 65, 0, 2, "Polska/Włochy", 4.4, 15, "ewa-ostatnia-lekcja", "Ewa+ostatnia+lekcja-2025-10119675"],
+      ["Freak Show", "Freak Show", 75, 0, 1, "Polska", 6.9, 92, "freak-show", "Freak+Show-2026-10065590"],
+      ["Gorzkie owoce", "Fruits of Despair", 29, 0, 1, "Iran", 6.8, 17, "gorzkie-owoce", "Gorzkie+owoce-2026-10117183"],
+      ["Habibi Hussein", "Habibi Hussein", 96, 0, 0, "—", null, null, "habibi-hussein", "Habibi+Hussein-2025-10119409"],
+      ["Hassan", "Hassan", 30, 0, 1, "Francja/Palestyna", 6.8, 22, "blok-1-przerwane-dorastanie-1", "Hassan-2025-10118984"],
+      ["Henry to dziewczyna, która lubi pospać", "Henry Is a Girl Who Likes to Sleep", 14, 0, 0, "—", null, null, "henry-to-dziewczyna-ktora-lubi-pospac", "Henry+to+dziewczyna%2C+kt%C3%B3ra+lubi+pospa%C4%87-2026-10116954"],
+      ["Idź z duszą na dłoni", "Put Your Soul on Your Hand and Walk", 113, 0, 0, "—", null, null, "idz-z-dusza-na-dloni", "Id%C5%BA+z+dusz%C4%85+na+d%C5%82oni-2025-10081526"],
+      ["Irvine Welsh. Rzeczywistość to za mało", "Irvine Welsh: Reality Is Not Enough", 90, 0, 0, "—", null, null, "irvine-welsh-rzeczywistosc-to-za-malo", "Irvine+Welsh.+Rzeczywisto%C5%9B%C4%87+to+za+ma%C5%82o-2025-10120054"],
+      ["Istoty czujące", "Sentient Beings", null, 0, 0, "—", null, null, null, "Istoty+czuj%C4%85ce-2026-10111760"],
+      ["Jak głęboka jest twoja miłość?", "How Deep is Your Love", 100, 0, 1, "Wielka Brytania", 7.2, 60, "jak-gleboka-jest-twoja-milosc", "Jak+g%C5%82%C4%99boka+jest+twoja+mi%C5%82o%C5%9B%C4%87-2025-10107580"],
+      ["Jak złapać motyla?", "How to Catch a Butterfly", 27, 1, 0, "Holandia", 7.3, 19, "jak-zlapac-motyla", "Jak+z%C5%82apa%C4%87+motyla-2026-10118988"],
+      ["Jak zrobić film o betonie", "How to Make a Film About Concrete", null, 0, 0, "—", null, null, null, "Jak+zrobi%C4%87+film+o+betonie-2026-10111735"],
+      ["Jane Elliot kontra reszta świata", "Jane Elliott vs. the World", null, 0, 0, "—", null, null, null, "Jane+Elliot+kontra+reszta+%C5%9Bwiata-2026-10111736"],
+      ["Jedna na milion", "One in a Million", null, 0, 0, "—", null, null, null, "Jedna+na+milion-2026-10111761"],
+      ["Joybubbles", "Joybubbles", null, 0, 0, "—", null, null, null, "Joybubbles-2026-10110914"],
+      ["Jutro było wczoraj", "Tomorrow Was Yesterday", null, 0, 0, "—", null, null, null, "Jutro+by%C5%82o+wczoraj-2025-10107853"],
+      ["Już dość", "Enough", null, 0, 0, "—", null, null, null, "Ju%C5%BC+do%C5%9B%C4%87-2026-10114506"],
+      ["Kandydaci śmierci", "Death Candidates", null, 0, 0, "—", null, null, null, "Kandydaci+%C5%9Bmierci-2025-10105405"],
+      ["Kikuyu Land", "Kikuyu Land", 94, 0, 0, "—", null, null, "ziemia-kikuju", "Kikuyu+Land-2026-10111981"],
+      ["Kłopotliwy niedźwiedź", "Troublesome Bear", null, 0, 0, "—", null, null, null, "K%C5%82opotliwy+nied%C5%BAwied%C5%BA-2026-10111098"],
+      ["Krokodyl", "Crocodile", 100, 1, 1, "Nowa Zelandia/Nigeria", 6.7, 36, "krokodyl", "Krokodyl-2026-10116978"],
+      ["Król Hamlet", "King Hamlet", null, 0, 0, "—", null, null, null, "Kr%C3%B3l+Hamlet-2025-10118877"],
+      ["Królowe taksówek", "Auto Queens", 30, 0, 1, "Indie", 6.9, 15, "blok-6-czego-pozadamy-o-czym-marzymy-2", "Kr%C3%B3lowe+taks%C3%B3wek-2025-10118989"],
+      ["Kto zabił Alexa Odeha?", "Who Killed Alex Odeh?", null, 0, 0, "—", null, null, null, "Kto+zabi%C5%82+Alexa+Odeha-2026-10110919"],
+      ["La Scala. Moc przeznaczenia", "La Scala: The Force of Destiny", 93, 0, 2, "Francja/Włochy", 6.1, 15, "la-scala-moc-przeznaczenia", "La+Scala.+Moc+przeznaczenia-2025-10116080"],
+      ["Lech Janerka – śpij, śpij inteligencie", "Lech Janerka – Sleep, Sleep Intelligentsia", null, 0, 0, "Polska", null, null, null, "Lech+Janerka+%E2%80%93+%C5%9Bpij%2C+%C5%9Bpij+inteligencie-2025-10121436"],
+      ["Lis i różowy księżyc", "A Fox Under a Pink Moon", 77, 3, 2, "Dania/Francja/Iran/USA/W.Brytania", 7.6, 53, "lis-i-rozowy-ksiezyc", "Lis+i+r%C3%B3%C5%BCowy+ksi%C4%99%C5%BCyc-2025-10118815"],
+      ["Lombard", "The Pawnshop", 75, 0, 0, "—", null, null, "lombard", null],
+      ["Love-22-Love", "Love-22-Love", 84, 0, 0, "—", null, null, "love-22-love", "Love+22+Love-2025-10120372"],
+      ["Małe, duże i daleko", "Small, Big and Far Away", null, 0, 0, "—", null, null, null, "Ma%C5%82e%2C+du%C5%BCe+i+daleko-2024-10062490"],
+      ["Maluję swój autoportret, a wychodzi mi moja siostra", "I'm Painting a Self-portrait…", 11, 0, 1, "Polska", 7.2, 17, "maluje-swoj-autoportret-a-wychodzi-mi-moja-siostra", "Maluj%C4%99+sw%C3%B3j+autoportret%2C+a+wychodzi+mi+moja+siostra-2026-10118973"],
+      ["Mam rzekę we krwi", "I Follow Rivers", 98, 0, 0, "—", null, null, "mam-rzeke-we-krwi", "Mam+rzek%C4%99+we+krwi-2026-10118870"],
+      ["Mamo, czy żyrafy płaczą?", "Amma, Do Giraffes Cry?", 26, 0, 1, "Czechy", 5.8, 25, "mamo-czy-zyrafy-placza", "Mamo%2C+czy+%C5%BCyrafy+p%C5%82acz%C4%85-2025-10118997"],
+      ["Mariinka", "Mariinka", 95, 2, 3, "Belgia/Holandia/Niemcy/Szwecja", 7.4, 120, "mariinka", "Mariinka-2026-10121011"],
+      ["Marlee Matlin, nie jesteś sama", "Marlee Matlin: Not Alone", null, 0, 0, "—", null, null, null, "Marlee+Matlin%2C+nie+jeste%C5%9B+sama-2025-10074518"],
+      ["Mentor", "Mentor", 14, 0, 1, "Polska", 7.5, 36, "blok-1-przerwane-dorastanie-2", "Mentor-2026-10118976"],
+      ["Meredith Monk – Portret w kawałkach", "Monk in Pieces", 95, 0, 0, "—", null, null, "meredith-monk-portret-w-kawalkach", "Meredith+Monk+portret+w+kawa%C5%82kach-2025-10070495"],
+      ["Miasto poetów", "City of Poets", 22, 0, 1, "Holandia", 7.1, 34, "miasto-poetow", "Miasto+Poet%C3%B3w-2024-10048146"],
+      ["Militantropos", "Militantropos", 111, 0, 0, "—", null, null, "militantropos", "Militantropos-2025-10079173"],
+      ["Mistrz przemówień", "Master of Speeches", null, 0, 0, "—", null, null, null, "Mistrz+przem%C3%B3wie%C5%84-2026-10111307"],
+      ["Mistrzostwa świata w gwizdaniu", "Whistle", 84, 0, 0, "—", null, null, "mistrzostwa-swiata-w-gwizdaniu", "Mistrzostwa+%C5%9Bwiata+w+gwizdaniu-2025-10099679"],
+      ["Moi Themersonowie", "My Themersons", 80, 0, 3, "Polska", 6.4, 99, "moi-themersonowie", "Moi+Themersonowie-2026-10119677"],
+      ["Moje dziecko", "My Child", null, 0, 0, "—", null, null, null, "Moje+dziecko-2026-10113962"],
+      ["Moje wszystkie głosy", "My Word Against Mine", 112, 1, 0, "Holandia", 7.6, 93, "moje-wszystkie-glosy", "Moje+wszystkie+g%C5%82osy-2025-10120840"],
+      ["Molly kontra algorytmy", "Molly vs the Machines", 83, 0, 0, "—", null, null, "molly-kontra-algorytmy", "Molly+kontra+algorytmy-2026-10122936"],
+      ["Na końcu internetu", "The End of the Internet", 88, 0, 0, "—", null, null, "na-koncu-internetu", null],
+      ["Na niebieskiej drodze – historia Edny O'Brien", "Blue Road – The Edna O'Brien Story", 99, 0, 1, "Irlandia/Wielka Brytania", 7.3, 19, "na-niebieskiej-drodze-historia-edny-o-brien", "Na+niebieskiej+drodze+historia+Edny+O%27Brien-2024-10065830"],
+      ["Najpiękniejszy mężczyzna na świecie", "The Most Beautiful Man in the World", null, 0, 0, "—", null, null, null, "Najpi%C4%99kniejszy+m%C4%99%C5%BCczyzna+na+%C5%9Bwiecie-2026-10117503"],
+      ["Najstarsza osoba na świecie", "The Oldest Person in the World", null, 0, 0, "—", null, null, null, "Najstarsza+osoba+na+%C5%9Bwiecie-2026-10112398"],
+      ["Naturalna dzikość serca", "A New Kind of Wilderness", 83, 0, 0, "—", null, null, "naturalna-dzikosc-serca", "Naturalna+dziko%C5%9B%C4%87+serca-2024-874356"],
+      ["Niedźwiedzica", "Frost Without Snow and Ice", 96, 0, 1, "Niemcy/Norwegia", 7.4, 87, "niedzwiedzica", "Nied%C5%BAwiedzica-2026-10120396"],
+      ["Nóż i wersety: zamach na Salmana Rushdiego", "Knife and Verses", null, 0, 0, "—", null, null, null, "N%C3%B3%C5%BC+i+wersety%3A+zamach+na+Salmana+Rushdiego-2026-10111977"],
+      ["Nurt", "Current", null, 0, 0, "—", null, null, null, "Nurt-2026-10119680"],
+      ["O czasie i wodzie", "About Time and Water", null, 0, 0, "—", null, null, null, "O+czasie+i+wodzie-2026-10112397"],
+      ["Oferta (Cold Call)", "Cold Call", null, 0, 0, "—", null, null, null, "Cold+Call-2025-10122841"],
+      ["Ogień w nas", "A Fire There", 94, 0, 0, "—", null, null, "ogien-w-nas", "Ogie%C5%84+w+nas-2026-10120389"],
+      ["Ona", "She", null, 0, 0, "—", null, null, null, "Ona-2025-10090991"],
+      ["Orwell: 2 + 2 = 5", "Orwell: 2 + 2 = 5", 119, 0, 2, "Francja/USA", 5.7, 177, "orwell-2-2-5", "Orwell%3A+2+%2B+2+%3D+5-2025-10078613"],
+      ["Pani z Północy pozna pana z Południa", "North Lady Meets South Man", null, 0, 0, "—", null, null, null, "Pani+z+P%C3%B3%C5%82nocy+pozna+pana+z+Po%C5%82udnia-2025-10103138"],
+      ["Piąta pora roku", "The Fifth Season", 60, 0, 0, "—", null, null, "piata-pora-roku", "Pi%C4%85ta+pora+roku-2025-10118872"],
+      ["Pieniądze to wszystko", "Money Is Everything", null, 0, 0, "—", null, null, null, "Pieni%C4%85dze+to+wszystko-2026-10110910"],
+      ["Piękny rok", "La belle année", 94, 0, 0, "—", null, null, "piekny-rok", "Pi%C4%99kny+rok-2026-10116272"],
+      ["Pieśni lasu", "Songs of the Forest", null, 0, 0, "—", null, null, null, "Pie%C5%9Bni+lasu-2025-10111381"],
+      ["Pieśni wielorybów", "Whale Nation", 88, 0, 0, "—", null, null, "piesni-wielorybow", null],
+      ["Pod osłoną lasu", "Life Beyond the Pine Curtain", 77, 0, 0, "—", null, null, "pod-oslona-lasu", "Pod+os%C5%82on%C4%85+lasu-2025-10097887"],
+      ["Pod powierzchnią *", "Bedrock", 102, 0, 0, "Kanada/Polska", 6.6, 439, null, "Pod+powierzchni%C4%85-2025-10070375"],
+      ["Pod Rzymem, nad Tybrem", "Cesare Through Time", 90, 0, 0, "—", null, null, "pod-rzymem-nad-tybrem", "Pod+Rzymem%2C+nad+Tybrem-2024-10120275"],
+      ["Polityczki mimo woli", "Not Made For Politics", 89, 0, 0, "—", null, null, "polityczki-mimo-woli", "Polityczki+mimo+woli-2025-10122170"],
+      ["Pomiędzy woskiem i złotem", "Wax & Gold", 97, 0, 3, "Austria/Włochy", 6.0, 79, "pomiedzy-woskiem-i-zlotem", "Pomi%C4%99dzy+woskiem+i+z%C5%82otem-2026-10116504"],
+      ["Portret zdezorientowanego ojca", "Portrait of a Confused Father", 92, 0, 0, "Norwegia", 7.1, 501, "portret-zdezorientowanego-ojca", "Portret+zdezorientowanego+ojca-2025-10077205"],
+      ["Portret, który uratował mi życie", "I Believe the Portrait Saved Me", 10, 0, 1, "Holandia/Kosowo", 6.0, 12, "blok-4-sytuacje-graniczne-2", "Portret%2C+kt%C3%B3ry+uratowa%C5%82+mi+%C5%BCycie-2025-10073607"],
+      ["Poza kadrem", "The Hidden Face of the Earth", 68, 0, 1, "Francja", 6.0, 40, "poza-kadrem", "Poza+kadrem-2026-10116913"],
+      ["Prawie na zawsze", "Almost Forever", 86, 0, 0, "—", null, null, "prawie-na-zawsze", "Prawie+na+zawsze-2026-10122808"],
+      ["Proszę nie siadać", "Please Do Not Sit", 60, 0, 0, "—", null, null, "prosze-nie-siadac", null],
+      ["Przepis na demokrację", "Cooking Up Democracy", 83, 0, 0, "—", null, null, "przepis-na-demokracje", null],
+      ["Przesuwając granice", "Shifting Baselines", 101, 0, 1, "Kanada", 5.8, 32, "przesuwajac-granice", "Przesuwaj%C4%85c+granice-2025-10121506"],
+      ["Ptaki wojny", "Birds of War", null, 0, 0, "—", null, null, null, "Ptaki+wojny-2026-10111980"],
+      ["Remake", "Remake", null, 0, 0, "—", null, null, null, "Remake-2025-10093360"],
+      ["Riefenstahl", "Riefenstahl", 115, 0, 0, "—", null, null, "riefenstahl", null],
+      ["Rio nadal jest piękne", "Rio Remains Beautiful", 24, 0, 1, "Belgia/Brazylia/Szwajcaria", 6.1, 19, "blok-2-wszystko-zostaje-w-rodzinie-1", "Rio+nadal+jest+pi%C4%99kne-2025-10118999"],
+      ["Roberto Rossellini – życie bez scenariusza", "Roberto Rossellini – Living Without A Script", 86, 0, 2, "Włochy", 7.2, 18, "roberto-rossellini-zycie-bez-scenariusza", "Roberto+Rossellini+%E2%80%93+%C5%BCycie+bez+scenariusza-2025-10118721"],
+      ["Runa Simi", "Runa Simi", 86, 0, 0, "—", null, null, "runa-simi", "Runa+simi-2025-10118396"],
+      ["Sama nie wiem", "I'm Not Sure", 10, 0, 1, "Szwajcaria", 7.0, 20, "sama-nie-wiem", "Sama+nie+wiem-2025-10119000"],
+      ["Sawyer Avenue, niedzielne popołudnie", "Sawyer Avenue, Sunday Afternoon", null, 0, 0, "—", null, null, null, "Sawyer+Avenue%2C+niedzielne+popo%C5%82udnie-2026-10122945"],
+      ["Ścieżka dźwiękowa zamachu stanu", "Soundtrack to a Coup d'Etat", 150, 0, 0, "—", null, null, "sciezka-dzwiekowa-zamachu-stanu", null],
+      ["Sekretne życie roślin", "Flying Scents – Of Plants & People", 66, 0, 1, "Szwajcaria", 5.5, 48, "sekretne-zycie-roslin", "Sekretne+%C5%BCycie+ro%C5%9Blin-2025-10091917"],
+      ["Simona", "Simona", 91, 0, 0, "—", null, null, "simona", null],
+      ["Siostrzeństwo świętej sauny", "Smoke Sauna Sisterhood", 89, 0, 0, "—", null, null, "siostrzenstwo-swietej-sauny", null],
+      ["Siri Hustvedt i wspomnienia przyszłości", "Siri Hustvedt and Memories of the Future", null, 0, 0, "—", null, null, null, "Siri+Hustvedt+i+wspomnienia+przysz%C5%82o%C5%9Bci-2026-10116905"],
+      ["Ślady", "Traces", 85, 2, 0, "Polska/Ukraina", 6.7, 10, "slady", "%C5%9Alady-2026-10116960"],
+      ["Sny o lepszej przeszłości", "Dreams for a Better Past", 21, 0, 0, "—", null, null, "sny-o-lepszej-przeszlosci", "Sny+o+lepszej+przesz%C5%82o%C5%9Bci-2025-10122843"],
+      ["Śpiewając daleko od domu", "A Song Without Home", 75, 0, 1, "Austria/Dania/Gruzja/USA", 6.8, 21, "spiewajac-daleko-od-domu", "%C5%9Apiewaj%C4%85c+daleko+od+domu-2026-10118002"],
+      ["Sun Ra. Wizja staje się dźwiękiem", "Sun Ra: Do The Impossible", 85, 0, 2, "USA", 6.2, 40, "sun-ra-wizja-staje-sie-dzwiekiem", "Sun+Ra%3A+Wizja+staje+si%C4%99+d%C5%BAwi%C4%99kiem-2025-10120565"],
+      ["Świat po pracy", "After Work", 81, 0, 0, "—", null, null, "swiat-po-pracy", null],
+      ["Sygnalista", "Whistleblower", 91, 0, 1, "Niemcy", null, null, "sygnalista", "Sygnalista-2025-10121504"],
+      ["Syn uzdrowiciela", "Supernatural", 84, 0, 0, "—", null, null, "syn-uzdrowiciela", null],
+      ["Szkoda, że nareszcie", "At Least. At Last.", 95, 0, 0, "Polska", 7.5, 610, "szkoda-ze-nareszcie", "Szkoda%2C+%C5%BCe+nareszcie-2025-10080944"],
+      ["Szukając równowagi", "Elements of(f) Balance", 98, 0, 1, "Austria", 5.7, 9, "szukajac-rownowagi", "Szukaj%C4%85c+r%C3%B3wnowagi-2025-10121508"],
+      ["Tajemniczy prezent", "The Mysterious Gift", null, 0, 0, "—", null, null, null, "Tajemniczy+prezent-2026-10120394"],
+      ["Tokio na winylach", "A Century in Sound", 106, 0, 0, "—", null, null, "tokio-na-winylach", "Tokio+na+winylach-2024-10122787"],
+      ["Twin Days", "Twin Days", 28, 0, 1, "Polska", 5.6, 26, "twin-days", "Twin+Days-2026-10118974"],
+      ["Uciszone", "Silenced", null, 0, 0, "—", null, null, null, "Uciszone-2026-10110911"],
+      ["Underland", "Underland", null, 0, 0, "—", null, null, null, "Underland-2025-10113035"],
+      ["Upadek", "Collapse", 79, 0, 1, "Izrael", 6.7, 28, "upadek", "Upadek-2026-10117385"],
+      ["U źródła światła – 11 pieśni dla Fidżi", "At the Source of Light – 11 Songs for Fiji", null, 0, 0, "—", null, null, null, "U+%C5%BAr%C3%B3d%C5%82a+%C5%9Bwiat%C5%82a+11+pie%C5%9Bni+dla+Fid%C5%BCi-2026-10120274"],
+      ["W czterech ścianach", "Our Walls", 8, 0, 1, "Słowenia", 5.7, 14, "w-czterech-scianach", "W+czterech+%C5%9Bcianach-2025-10119016"],
+      ["W stronę słońca", "Towards the Sun", 92, 0, 0, "—", null, null, "w-strone-slonca", null],
+      ["We Want the Funk", "We Want the Funk", 85, 0, 2, "USA", 7.3, 86, "we-want-the-funk", "We+Want+the+Funk-2025-10120065"],
+      ["Wiedźmy", "Hex", 92, 0, 1, "Norwegia", 6.6, 80, "wiedzmy", "Wied%C5%BAmy-2026-10120390"],
+      ["Wszystkie życia mojego ojca", "The Lives of My Father", 86, 0, 0, "—", null, null, "wszystkie-zycia-mojego-ojca", "Wszystkie+%C5%BCycia+mojego+ojca-2026-10118394"],
+      ["Wszystko, co się świeci", "Everything That Shines", null, 0, 0, "—", null, null, null, "Wszystko%2C+co+si%C4%99+%C5%9Bwieci-2025-10112776"],
+      ["Wszystko, o co gram", "Everything I Play For", 36, 0, 0, "—", null, null, "wszystko-o-co-gram", "Wszystko%2C+o+co+gram-2026-10119389"],
+      ["Wszyscy na Kenmure Street", "Everyone on Kenmure Street", null, 0, 0, "—", null, null, null, "Wszyscy+na+Kenmure+Street-2026-10111979"],
+      ["Wszędzie dobrze wszędzie źle", "Two Mountains Weighing Down My Chest", 86, 1, 3, "Holandia/Niemcy", 6.8, 116, "wszedie-dobrze-wszedie-zle", "Wsz%C4%99dzie+dobrze+wsz%C4%99dzie+%C5%BAle-2026-10116903"],
+      ["WTO/99", "WTO/99", null, 0, 0, "—", null, null, null, "WTO+99-2025-10103076"],
+      ["Wycieczka z przewodniczką", "Guided Tour", 15, 1, 0, "Francja/Portoryko", 5.6, 19, "wycieczka-z-przewodniczka", "Wycieczka+z+przewodniczk%C4%85-2026-10119021"],
+      ["Wyznania pieprzyka", "Confessions of a Mole", 92, 1, 1, "Chiny/Polska", 5.7, 92, "wyznania-pieprzyka", "Wyznania+pieprzyka-2025-10110659"],
+      ["Wyznania szwedzkiego mężczyzny", "Confessions of a Swedish Man", 96, 0, 0, "—", null, null, "wyznania-szwedzkiego-mezczyzny", "Wyznania+szwedzkiego+m%C4%99%C5%BCczyzny-2025-10114243"],
+      ["Yanuni", "Yanuni", 112, 0, 1, "Australia/Brazylia/Kanada/Niemcy/USA", 7.2, 44, "yanuni", "Yanuni-2025-10103189"],
+      ["Yo (Miłość jest zbuntowanym ptakiem)", "Yo (Love Is a Rebellious Bird)", null, 0, 0, "—", null, null, null, "Yo+%28Mi%C5%82o%C5%9B%C4%87+jest+zbuntowanym+ptakiem%29-2026-10113328"],
+      ["Yintah", "Yintah", 110, 0, 0, "—", null, null, "yintah", null],
+      ["Zapytaj E. Jean", "Ask E. Jean", null, 0, 0, "—", null, null, null, "Zapytaj+E.+Jean-2025-10118816"],
+      ["Zielone światło", "Green Light", null, 0, 0, "—", null, null, null, "Zielone+%C5%9Bwiat%C5%82o-2025-10090944"],
+    ];
+
+    let sortKey = 'pl', sortDir = 1;
+    function rc(r) { if (r == null) return ''; if (r >= 7.5) return 's-hi'; if (r >= 6.5) return 's-mid'; return 's-lo'; }
+    function sort(k) {
+      if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = 1; }
+      document.querySelectorAll('thead th[id]').forEach(el => { el.className = ''; });
+      const el = document.getElementById('h-' + k);
+      if (el) el.className = sortDir === 1 ? 'asc' : 'desc';
+      if (document.getElementById('sort-sel')) document.getElementById('sort-sel').value = k;
+      render();
+    }
+    function render() {
+      const q = document.getElementById('search').value.toLowerCase();
+      const f = document.getElementById('filter').value;
+      let data = RAW.filter(r => {
+        const m = r[0].toLowerCase().includes(q) || r[1].toLowerCase().includes(q) || (r[5] || '').toLowerCase().includes(q);
+        if (!m) return false;
+        if (f === 'wins') return r[3] > 0;
+        if (f === 'noms') return r[4] > 0 || r[3] > 0;
+        if (f === 'rated') return r[6] != null;
+        if (f === 'nofw') return !r[9];
+        return true;
+      });
+      const km = { pl: 0, en: 1, dur: 2, wins: 3, noms: 4, ctr: 5, rating: 6, votes: 7 };
+      data.sort((a, b) => {
+        const i = km[sortKey] ?? 0;
+        const av = a[i], bv = b[i];
+        if (av == null && bv == null) return 0;
+        if (av == null) return sortDir;
+        if (bv == null) return -sortDir;
+        if (typeof av === 'string') return sortDir * av.localeCompare(bv, 'pl');
+        return sortDir * (bv - av); // desc for numbers by default
+      });
+      // flip for pl/en/ctr (should be asc by default)
+      if (['pl', 'en', 'ctr'].includes(sortKey) && sortDir === 1) {
+        data.sort((a, b) => {
+          const i = km[sortKey];
+          return a[i].localeCompare(b[i], 'pl');
+        });
+      }
+      const tbody = document.getElementById('tbody');
+      if (!data.length) { tbody.innerHTML = ''; document.getElementById('empty').style.display = 'block'; return; }
+      document.getElementById('empty').style.display = 'none';
+      tbody.innerHTML = data.map(r => {
+        const rS = r[6] != null ? `<span class="rating ${rc(r[6])}">${r[6].toFixed(1)}</span>` : '<span class="dash">—</span>';
+        const vS = r[7] != null ? r[7].toLocaleString('pl') : '<span class="dash">—</span>';
+        const wS = r[3] > 0 ? `<span class="badge b-win">🏆 ${r[3]}</span>` : '<span class="dash">—</span>';
+        const nS = r[4] > 0 ? `<span class="badge b-nom">★ ${r[4]}</span>` : '<span class="dash">—</span>';
+        const mL = r[8] ? `<a href="${BM}${r[8]}" target="_blank" class="lnk lnk-m">MDAG ↗</a>` : `<a class="lnk lnk-none">MDAG</a>`;
+        const fL = r[9] ? `<a href="${BF}${r[9]}" target="_blank" class="lnk lnk-f">Filmweb ↗</a>` : `<a class="lnk lnk-none">Filmweb</a>`;
+        return `<tr><td title="${r[0]}">${r[0]}</td><td title="${r[1]}" style="color:#888;font-size:12px">${r[1]}</td><td class="ctr" title="${r[5]}">${r[5]}</td><td class="num">${r[2] || '—'}</td><td style="text-align:center">${rS}</td><td class="num">${vS}</td><td style="text-align:center">${wS}</td><td style="text-align:center">${nS}</td><td class="links" style="display:flex;gap:4px;align-items:center;padding:8px 10px">${mL}${fL}</td></tr>`;
+      }).join('');
+      document.getElementById('s-total').textContent = data.length;
+      document.getElementById('s-rated').textContent = data.filter(r => r[6] != null).length;
+      document.getElementById('s-wins').textContent = data.filter(r => r[3] > 0).length;
+      const rated = data.filter(r => r[6] != null);
+      document.getElementById('s-avg').textContent = rated.length ? (rated.reduce((s, r) => s + r[6], 0) / rated.length).toFixed(2) : '—';
+    }
+    document.getElementById('search').addEventListener('input', render);
+    document.getElementById('filter').addEventListener('change', render);
+    render();
+  </script>
 </body>
+
 </html>
