@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MDAG 2026 — Filmy (23. edycja)</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f0f;
+      color: #e8e8e8;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a1a1a;
+      border-bottom: 1px solid #2a2a2a;
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    header .sub {
+      font-size: .85rem;
+      color: #888;
+    }
+
+    .controls {
+      background: #141414;
+      border-bottom: 1px solid #222;
+      padding: 1rem 2rem;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .controls input {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #e8e8e8;
+      padding: 8px 12px;
+      font-size: 14px;
+      width: 240px;
+    }
+
+    .controls input:focus {
+      outline: none;
+      border-color: #555;
+    }
+
+    .controls select {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #e8e8e8;
+      padding: 8px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+      margin-left: auto;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      background: #1e1e1e;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 6px 14px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .stat-val {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      padding: 0 2rem 3rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 1rem;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 10px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-bottom: 1px solid #2a2a2a;
+      cursor: pointer;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      background: #0f0f0f;
+    }
+
+    thead th:hover {
+      color: #ccc;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #1a1a1a;
+      transition: background .1s;
+    }
+
+    tbody tr:hover {
+      background: #1a1a1a;
+    }
+
+    td {
+      padding: 8px 10px;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 220px;
+    }
+
+    td.ctr {
+      font-size: 11px;
+      color: #666;
+      max-width: 140px;
+    }
+
+    td.num {
+      text-align: right;
+      color: #888;
+    }
+
+
+    .rating {
+      font-weight: 700;
+    }
+
+    .s-hi {
+      color: #4ade80;
+    }
+
+    .s-mid {
+      color: #60a5fa;
+    }
+
+    .s-lo {
+      color: #f97316;
+    }
+
+    .dash {
+      color: #444;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .b-win {
+      background: rgba(74, 222, 128, .15);
+      color: #4ade80;
+    }
+
+    .b-nom {
+      background: rgba(96, 165, 250, .15);
+      color: #60a5fa;
+    }
+
+    th.asc::after {
+      content: " ↑";
+      color: #aaa;
+    }
+
+    th.desc::after {
+      content: " ↓";
+      color: #aaa;
+    }
+
+    .icons {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .icons a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      transition: opacity .15s;
+    }
+
+    .icons a:hover {
+      opacity: 0.8;
+    }
+
+    .icons a.disabled {
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    .icons img {
+      width: 16px;
+      height: 16px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 3rem;
+      color: #555;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 11px;
+      color: #444;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div>
+      <h1>🎬 MDAG 2026 — Filmy</h1>
+      <div class="sub">23. Millennium Docs Against Gravity · Oceny: Filmweb · Dane: maj 2026</div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Filmy</div>
+        <div class="stat-val" id="s-total">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Z oceną</div>
+        <div class="stat-val" id="s-rated">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Nagrodzone</div>
+        <div class="stat-val" id="s-wins">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Śr. ocena</div>
+        <div class="stat-val" id="s-avg">—</div>
+      </div>
+    </div>
+  </header>
+  <div class="controls">
+    <input type="text" id="search" placeholder="🔍  Szukaj tytułu lub kraju…">
+    <select id="filter">
+      <option value="all">Wszystkie filmy</option>
+      <option value="wins">Nagrodzone</option>
+      <option value="noms">Nominowane lub nagrodzone</option>
+      <option value="rated">Z oceną Filmweb</option>
+      <option value="nofw">Brak linku Filmweb</option>
+    </select>
+    <select id="sort-sel" onchange="sort(this.value)">
+      <option value="pl">Tytuł A–Z</option>
+      <option value="rating">Ocena (malejąco)</option>
+      <option value="votes">Głosy (malejąco)</option>
+      <option value="dur">Czas trwania</option>
+      <option value="wins">Nagrody</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:36px"></th>
+          <th style="width:22%" onclick="sort('pl')" id="h-pl">Tytuł polski</th>
+          <th style="" onclick="sort('en')" id="h-en">Tytuł angielski</th>
+          <th style="width:13%" onclick="sort('ctr')" id="h-ctr">Kraj</th>
+          <th style="width:5%;text-align:right" onclick="sort('dur')" id="h-dur">min</th>
+          <th style="width:6%;text-align:center" onclick="sort('rating')" id="h-rating">Ocena</th>
+          <th style="width:6%;text-align:right" onclick="sort('votes')" id="h-votes">Głosy</th>
+          <th style="width:8%;text-align:center" onclick="sort('wins')" id="h-wins">Nagrody</th>
+          <th style="width:8%;text-align:center" onclick="sort('noms')" id="h-noms">Nom.</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="empty" class="empty" style="display:none">Brak wyników dla podanego zapytania.</div>
+  </div>
+  <footer>Dane zebrane z mdag.pl i filmweb.pl · Maj 2026 · * = film z edycji MDAG 2025</footer>
+  <script>
+    const BM = 'https://mdag.pl/pl/ogladaj-online/23/film/';
+    const BF = 'https://www.filmweb.pl/film/';
+    // [pl, en, dur, wins, noms, country, rating, votes, mdag_slug, fw_slug]
+    const RAW = {{ RAW_DATA }};
+
+    let sortKey = 'pl', sortDir = 1;
+    function rc(r) { if (r == null) return ''; if (r >= 7.5) return 's-hi'; if (r >= 6.5) return 's-mid'; return 's-lo'; }
+    function sort(k) {
+      if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = 1; }
+      document.querySelectorAll('thead th[id]').forEach(el => { el.className = ''; });
+      const el = document.getElementById('h-' + k);
+      if (el) el.className = sortDir === 1 ? 'asc' : 'desc';
+      if (document.getElementById('sort-sel')) document.getElementById('sort-sel').value = k;
+      render();
+    }
+    function render() {
+      const q = document.getElementById('search').value.toLowerCase();
+      const f = document.getElementById('filter').value;
+      let data = RAW.filter(r => {
+        const m = r[0].toLowerCase().includes(q) || r[1].toLowerCase().includes(q) || (r[5] || '').toLowerCase().includes(q);
+        if (!m) return false;
+        if (f === 'wins') return r[3] > 0;
+        if (f === 'noms') return r[4] > 0 || r[3] > 0;
+        if (f === 'rated') return r[6] != null;
+        if (f === 'nofw') return !r[9];
+        return true;
+      });
+      const km = { pl: 0, en: 1, dur: 2, wins: 3, noms: 4, ctr: 5, rating: 6, votes: 7 };
+      data.sort((a, b) => {
+        const i = km[sortKey] ?? 0;
+        const av = a[i], bv = b[i];
+        if (av == null && bv == null) return 0;
+        if (av == null) return sortDir;
+        if (bv == null) return -sortDir;
+        if (typeof av === 'string') return sortDir * av.localeCompare(bv, 'pl');
+        return sortDir * (bv - av); // desc for numbers by default
+      });
+      // flip for pl/en/ctr (should be asc by default)
+      if (['pl', 'en', 'ctr'].includes(sortKey) && sortDir === 1) {
+        data.sort((a, b) => {
+          const i = km[sortKey];
+          return a[i].localeCompare(b[i], 'pl');
+        });
+      }
+      const tbody = document.getElementById('tbody');
+      if (!data.length) { tbody.innerHTML = ''; document.getElementById('empty').style.display = 'block'; return; }
+      document.getElementById('empty').style.display = 'none';
+      tbody.innerHTML = data.map(r => {
+        const rS = r[6] != null ? `<span class="rating ${rc(r[6])}">${r[6].toFixed(1)}</span>` : '<span class="dash">—</span>';
+        const vS = r[7] != null ? r[7].toLocaleString('pl') : '<span class="dash">—</span>';
+        const wS = r[3] > 0 ? `<span class="badge b-win">🏆 ${r[3]}</span>` : '<span class="dash">—</span>';
+        const nS = r[4] > 0 ? `<span class="badge b-nom">★ ${r[4]}</span>` : '<span class="dash">—</span>';
+        const mI = r[8] ? `<a href="${BM}${r[8]}" target="_blank" title="MDAG"><img src="https://mdag.pl/favicon-13.ico" alt="MDAG"></a>` : `<a class="disabled"><img src="https://mdag.pl/favicon-13.ico" alt="MDAG"></a>`;
+        const fI = r[9] ? `<a href="${BF}${r[9]}" target="_blank" title="Filmweb"><img src="https://www.filmweb.pl/favicon.ico" alt="Filmweb"></a>` : `<a class="disabled"><img src="https://www.filmweb.pl/favicon.ico" alt="Filmweb"></a>`;
+        return `<tr><td class="icons">${mI}${fI}</td><td title="${r[0]}">${r[0]}</td><td title="${r[1]}" style="color:#888;font-size:12px">${r[1]}</td><td class="ctr" title="${r[5]}">${r[5]}</td><td class="num">${r[2] || '—'}</td><td style="text-align:center">${rS}</td><td class="num">${vS}</td><td style="text-align:center">${wS}</td><td style="text-align:center">${nS}</td></tr>`;
+      }).join('');
+      document.getElementById('s-total').textContent = data.length;
+      document.getElementById('s-rated').textContent = data.filter(r => r[6] != null).length;
+      document.getElementById('s-wins').textContent = data.filter(r => r[3] > 0).length;
+      const rated = data.filter(r => r[6] != null);
+      document.getElementById('s-avg').textContent = rated.length ? (rated.reduce((s, r) => s + r[6], 0) / rated.length).toFixed(2) : '—';
+    }
+    document.getElementById('search').addEventListener('input', render);
+    document.getElementById('filter').addEventListener('change', render);
+    render();
+  </script>
+</body>
+
+</html>
